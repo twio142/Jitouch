@@ -38,8 +38,19 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      - name: Fix permissions and sign
+        run: |
+          chmod +x build/prefpane/Release/Jitouch.prefPane/Contents/MacOS/Jitouch
+          chmod +x build/prefpane/Release/Jitouch.prefPane/Contents/Resources/Jitouch.app/Contents/MacOS/Jitouch
+          codesign --sign - --force build/prefpane/Release/Jitouch.prefPane/Contents/Resources/Jitouch.app
+
+      - name: Stage artifact
+        run: |
+          mkdir build/dist
+          cp -R build/prefpane/Release/Jitouch.prefPane build/dist/
+
       - name: Upload Jitouch.prefPane
         uses: actions/upload-artifact@v4
         with:
           name: Jitouch.prefPane
-          path: build/prefpane/Release/
+          path: build/dist/
