@@ -1,0 +1,45 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build agent (Jitouch.app)
+        run: |
+          xcodebuild \
+            -project jitouch/Jitouch/Jitouch.xcodeproj \
+            -scheme Jitouch \
+            -configuration Release \
+            SYMROOT="$PWD/build/agent" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Stage Jitouch.app for prefpane
+        run: cp -R build/agent/Release/Jitouch.app prefpane/
+
+      - name: Build prefpane (Jitouch.prefPane)
+        run: |
+          xcodebuild \
+            -project prefpane/Jitouch.xcodeproj \
+            -target Jitouch \
+            -configuration Release \
+            SYMROOT="$PWD/build/prefpane" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Upload Jitouch.prefPane
+        uses: actions/upload-artifact@v4
+        with:
+          name: Jitouch.prefPane
+          path: build/prefpane/Release/
