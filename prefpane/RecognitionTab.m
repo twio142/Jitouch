@@ -388,6 +388,7 @@
                                              @"Launch Finder",
                                            @"Open File...",
                                            @"Open Website...",
+                                           @"Run Shell Command...",
                                            nil];
         if (![[applicationButton titleOfSelectedItem] isEqualToString:@"Safari"]) {
             [builtinCommands removeObject:@"Select Tab Above Cursor"];
@@ -399,6 +400,9 @@
         }
         if (openURL) {
             [builtinCommands insertObject:[NSString stringWithFormat:@"Open \"%@\"", openURL] atIndex:[builtinCommands count]];
+        }
+        if (shellCommand) {
+            [builtinCommands insertObject:[NSString stringWithFormat:@"Run \"%@\"", shellCommand] atIndex:[builtinCommands count]];
         }
 
         for (NSString *element in builtinCommands) {
@@ -475,6 +479,7 @@
 
     openFilePath = nil;
     openURL = nil;
+    shellCommand = nil;
     if (addsCommand) {
 
         if ([commandOutlineView selectedRow] != -1) {
@@ -508,6 +513,9 @@
         }
         if ([[oldItem objectForKey:@"IsAction"] boolValue] && [oldItem objectForKey:@"OpenURL"]) {
             openURL = [oldItem objectForKey:@"OpenURL"];
+        }
+        if ([[oldItem objectForKey:@"IsAction"] boolValue] && [oldItem objectForKey:@"ExecuteShellCommand"]) {
+            shellCommand = [oldItem objectForKey:@"ExecuteShellCommand"];
         }
 
         [self loadActionButton];
@@ -545,6 +553,7 @@
 - (IBAction)okUrlWindow:(id)sender {
     [NSApp endSheet:urlWindow];
     openFilePath = nil;
+    shellCommand = nil;
     openURL = [urlWindowUrl stringValue];
     openURL = [openURL stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     if (![[NSURL URLWithString:openURL] scheme]) {
@@ -590,10 +599,11 @@
                       [NSNumber numberWithUnsignedShort:0], @"KeyCode",
                       [NSNumber numberWithInt:NSControlStateValueOn], @"Enable",
                       nil];
-        if (openFilePath) {
+        if (shellCommand) {
+            [newCommand setObject:shellCommand forKey:@"ExecuteShellCommand"];
+        } else if (openFilePath) {
             [newCommand setObject:openFilePath forKey:@"OpenFilePath"];
-        }
-        if (openURL) {
+        } else if (openURL) {
             [newCommand setObject:openURL forKey:@"OpenURL"];
         }
     } else {
@@ -714,6 +724,7 @@
             if (result == NSModalResponseOK) {
                 openFilePath = [[[oPanel URL] path] copy]; //TODO: mem leak
                 openURL = nil;
+                shellCommand = nil;
                 [self loadActionButton];
                 [actionButton selectItemWithTitle:[NSString stringWithFormat:@"Open \"%@\"", [openFilePath lastPathComponent]]];
             } else {
@@ -730,6 +741,33 @@
             [urlWindowCancel setAction:@selector(cancelUrlWindow:)];
             [commandSheet beginSheet:urlWindow completionHandler:^(NSModalResponse returnCode) {
                 [self didEndSheet:urlWindow returnCode:returnCode contextInfo:nil];
+            }];
+        } else if ([[actionButton titleOfSelectedItem] isEqualToString:@"Run Shell Command..."]) {
+            NSAlert *alert = [[NSAlert alloc] init];
+            [alert setMessageText:@"Enter shell command to run:"];
+            [alert addButtonWithTitle:@"OK"];
+            [alert addButtonWithTitle:@"Cancel"];
+            NSTextField *input = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 300, 24)];
+            [input setStringValue:shellCommand ? shellCommand : @""];
+            [alert setAccessoryView:input];
+            [alert beginSheetModalForWindow:commandSheet completionHandler:^(NSModalResponse returnCode) {
+                if (returnCode == NSAlertFirstButtonReturn) {
+                    [input validateEditing];
+                    NSString *cmd = [[input stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                    if ([cmd length] > 0) {
+                        shellCommand = [cmd copy];
+                        openFilePath = nil;
+                        openURL = nil;
+                        [self loadActionButton];
+                        [actionButton selectItemWithTitle:[NSString stringWithFormat:@"Run \"%@\"", shellCommand]];
+                    } else {
+                        [actionButton selectItemWithTitle:@"-"];
+                    }
+                } else {
+                    [actionButton selectItemWithTitle:@"-"];
+                }
+                [input release];
+                [alert release];
             }];
         }
     } else if (sender == shortcutTextField && ![[shortcutTextField stringValue] isEqualToString:@""]) {

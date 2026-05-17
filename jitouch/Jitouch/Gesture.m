@@ -917,7 +917,16 @@ static void doCommand(NSString *gesture, int device) {
             } else if ([command isEqualToString:@"Brightness Down"]) {
                 [keyUtil simulateSpecialKey:NX_KEYTYPE_BRIGHTNESS_DOWN];
             } else {
-                if ([commandDict objectForKey:@"OpenFilePath"]) {
+                if ([commandDict objectForKey:@"ExecuteShellCommand"]) {
+                    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+                    NSString *shellCmd = [commandDict objectForKey:@"ExecuteShellCommand"];
+                    NSTask *task = [[NSTask alloc] init];
+                    task.executableURL = [NSURL fileURLWithPath:@"/bin/sh"];
+                    task.arguments = @[@"-c", shellCmd];
+                    [task launchAndReturnError:nil];
+                    [task release];
+                    [pool release];
+                } else if ([commandDict objectForKey:@"OpenFilePath"]) {
                     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
                     NSString *openFilePath = [commandDict objectForKey:@"OpenFilePath"];
                     if ([[NSFileManager defaultManager] fileExistsAtPath:openFilePath]) {
@@ -932,11 +941,9 @@ static void doCommand(NSString *gesture, int device) {
                     } else {
                         NSAlert *alert = [[NSAlert alloc] init];
                         [alert setMessageText:[NSString stringWithFormat:@"Can't open the file \"%@\"", openFilePath]];
-                        //[alert setInformativeText:@""];
                         [alert setAlertStyle:NSWarningAlertStyle];
                         [NSApp activateIgnoringOtherApps:YES];
-                        //[alert runModal];
-                        [alert beginSheetModalForWindow:[(JitouchAppDelegate*)[NSApp delegate] window] completionHandler:nil]; //use non-modal
+                        [alert beginSheetModalForWindow:[(JitouchAppDelegate*)[NSApp delegate] window] completionHandler:nil];
                         [alert release];
                     }
                     [pool release];

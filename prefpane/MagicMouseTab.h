@@ -51,6 +51,7 @@
 
     NSString *openFilePath;
     NSString *openURL;
+    NSString *shellCommand;
 }
 
 - (IBAction)change:(id)sender;
