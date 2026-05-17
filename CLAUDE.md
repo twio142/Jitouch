@@ -43,21 +43,11 @@ A `NSPreferencePane` plugin loaded by System Preferences. Key files:
 Gesture actions are stored as `NSDictionary` objects in `NSUserDefaults`. Each gesture maps to a command dict with keys such as:
 - `"OpenFile"` -- path to open
 - `"OpenURL"` -- URL string
-- `"ExecuteShellCommand"` -- shell command string (being added in `feat/shell`)
+- `"ExecuteShellCommand"` -- shell command string
 
 The `doCommand()` function in `Gesture.m` inspects these keys with an if/else chain to decide what action to execute.
-
-### Active Development: Shell Command Feature (`feat/shell`)
-
-`PLAN.md` documents the in-progress implementation. The changes span all three Tab files (UI) and `Gesture.m` (execution). The key integration point is adding `[commandDict objectForKey:@"ExecuteShellCommand"]` handling in `doCommand()`, and prompting via `NSAlert` with an `NSTextField` accessory view in the `change:` method of each tab.
 
 ## Scripts
 
 - `scripts/bump-version.sh` -- Updates version strings and creates a git tag.
 - `scripts/sign-installer.sh` -- Signs and notarizes the installer package for distribution.
-
-<!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
-at `specs/001-shell-command/plan.md`.
-<!-- SPECKIT END -->
